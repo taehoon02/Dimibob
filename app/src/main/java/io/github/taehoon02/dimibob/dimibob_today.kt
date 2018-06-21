@@ -4,11 +4,11 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.widget.RemoteViews
-import khttp.responses.Response
+import okhttp3.*
 import org.json.JSONObject
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import khttp.delete as httpDelete
 
 /**
  * Implementation of App Widget functionality.
@@ -35,34 +35,49 @@ class dimibob_today : AppWidgetProvider() {
         internal fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager,
                                      appWidgetId: Int) {
 
-            var breakfast: String
-            var lunch: String
-            var dinner: String
-            var snack: String
-
-            // Today
-            val today : Calendar = Calendar.getInstance()
-            val format = SimpleDateFormat("yyyyMMdd").format(today.time)
-            var url = "https://api.dimigo.in/dimibobs/" + format
+            var breakfast = ""
+            var lunch = ""
+            var dinner = ""
+            var snack = ""
 
             // Json Parser
-            val response : Response = khttp.get(url)
-            val obj : JSONObject = response.jsonObject
+            val today : Calendar = Calendar.getInstance()
+            val format = SimpleDateFormat("yyyyMMdd").format(today.time)
+            val url = "https://api.dimigo.in/dimibobs/" + format
 
-            breakfast = obj["breakfast"] as String
-            lunch = obj["lunch"] as String
-            dinner = obj["dinner"] as String
-            snack = obj["snack"] as String
+            val request = Request.Builder().url(url).build()
 
-            // Construct the RemoteViews object
-            val views = RemoteViews(context.packageName, R.layout.dimibob_today)
-            views.setTextViewText(R.id.breakfast_show, breakfast)
-            views.setTextViewText(R.id.lunch_show, lunch)
-            views.setTextViewText(R.id.dinner_show, dinner)
-            views.setTextViewText(R.id.snack_show, snack)
+            val client = OkHttpClient()
+            client.newCall(request).enqueue(object: Callback {
+                override fun onResponse(call: Call?, response: Response?) {
+                    val body = response?.body()?.string()
+                    println(body)
 
-            // Instruct the widget manager to update the widget
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+                    val jsonObject = JSONObject(body)
+                    breakfast = jsonObject.get("breakfast") as String
+                    if (breakfast == null) breakfast = "급식 정보가 없습니다."
+                    lunch = jsonObject.get("lunch") as String
+                    if (lunch == null) lunch = "급식 정보가 없습니다."
+                    dinner = jsonObject.get("dinner") as String
+                    if (dinner == null) dinner = "급식 정보가 없습니다."
+                    snack = jsonObject.get("snack") as String
+                    if (snack == null) snack = "급식 정보가 없습니다."
+
+                    println(breakfast)
+
+                    val views = RemoteViews(context.packageName, R.layout.dimibob_today)
+                    views.setTextViewText(R.id.breakfast_show, breakfast)
+                    views.setTextViewText(R.id.lunch_show, lunch)
+                    views.setTextViewText(R.id.dinner_show, dinner)
+                    views.setTextViewText(R.id.snack_show, snack)
+
+                    appWidgetManager.updateAppWidget(appWidgetId, views)
+                }
+
+                override fun onFailure(call: Call?, e: IOException?) {
+                    println("Failed to execute request")
+                }
+            })
         }
     }
 }

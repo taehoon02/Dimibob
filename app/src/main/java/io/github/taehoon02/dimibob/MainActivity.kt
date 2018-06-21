@@ -15,6 +15,5 @@ class MainActivity : AppCompatActivity() {
         check.setOnClickListener {
             finish()
         }
-
     }
 }
