@@ -43,7 +43,7 @@ class dimibob_today : AppWidgetProvider() {
             // Json Parser
             val today : Calendar = Calendar.getInstance()
             val format = SimpleDateFormat("yyyyMMdd").format(today.time)
-            val url = "https://api.dimigo.in/dimibobs/" + format
+            val url = "https://api.dimigo.in/dimibobes/" + format
 
             val request = Request.Builder().url(url).build()
 
